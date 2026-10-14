@@ -34,6 +34,13 @@ class FeeCalculatorTest {
                 () -> calculator.calculateFee(new BigDecimal("100.00"), "JPY", false));
     }
 
+
+    @Test
+    @DisplayName("Unspported currency is rejected baba")
+    void unspportedCurrencyIsRejectedBaba() {
+        assertThrows(IllegalArgumentException.class, () -> calculator.calculateFee(new BigDecimal("100.00"), "TRY", false));
+    }
+
     @Test
     @DisplayName("EUR: small amount gets the minimum fee of 0.50")
     void eurSmallAmountGetsMinimumFee() {
