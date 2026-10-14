@@ -1,0 +1,15 @@
+# Build output
+target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# macOS
+.DS_Store
+
+# Test reports and logs
+allure-results/
+allure-report/
+*.log
