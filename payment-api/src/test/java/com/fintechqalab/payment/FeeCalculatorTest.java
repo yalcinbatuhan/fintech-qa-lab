@@ -73,7 +73,6 @@ class FeeCalculatorTest {
         assertEquals(new BigDecimal("20.00"), fee);
     }
 
-
     @Test
     @DisplayName("Boundary: 50,000.01 is rejected")
     void justAboveMaximumAmountIsRejected() {
@@ -81,9 +80,29 @@ class FeeCalculatorTest {
                 () -> calculator.calculateFee(new BigDecimal("50000.01"), "EUR", false));
     }
 
+    @Test
+    @DisplayName("USD: 1% of 1,000.00 is 10.00")
+    void usdFeeIsOnePercent() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "USD", false);
 
+        assertEquals(new BigDecimal("10.00"), fee);
+    }
 
+    @Test
+    @DisplayName("USD: small amount gets the minimum fee of 1.00")
+    void usdSmallAmountGetsMinimumFee() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("50.00"), "USD", false);
 
+        assertEquals(new BigDecimal("1.00"), fee);
+    }
+
+    @Test
+    @DisplayName("USD: large amount is capped at the maximum fee of 50.00")
+    void usdLargeAmountIsCappedAtMaximumFee() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "USD", false);
+
+        assertEquals(new BigDecimal("50.00"), fee);
+    }
     // TODO Week 1: add your tests below.
     // Ideas (equivalence partitioning and boundary value analysis):
     //   - EUR minimum fee (very small amounts) and maximum fee (very large amounts)
