@@ -36,7 +36,7 @@ The upper limit check uses `>=` instead of `>`:
 | Component | payment-api / FeeCalculator                    |
 | Severity | Major                                          |
 | Priority | High                                           |
-| Found by | Unit test `usdLargeAmountIsCappedAtMaximumFee` |
+| Found by | Parameterized test `usdFeeTable`, row `10000.00 -> 50.00` |
 | Status | Open                                           |
 
 **Steps to reproduce**

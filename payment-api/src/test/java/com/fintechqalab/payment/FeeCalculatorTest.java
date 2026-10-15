@@ -4,6 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,13 +21,7 @@ class FeeCalculatorTest {
 
     private final FeeCalculator calculator = new FeeCalculator();
 
-    @Test
-    @DisplayName("EUR: 0.5% of 1,000.00 is 5.00")
-    void eurFeeIsHalfAPercent() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "EUR", false);
 
-        assertEquals(new BigDecimal("5.00"), fee);
-    }
 
     @Test
     @DisplayName("Unsupported currency is rejected")
@@ -41,21 +37,8 @@ class FeeCalculatorTest {
         assertThrows(IllegalArgumentException.class, () -> calculator.calculateFee(new BigDecimal("100.00"), "TRY", false));
     }
 
-    @Test
-    @DisplayName("EUR: small amount gets the minimum fee of 0.50")
-    void eurSmallAmountGetsMinimumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10.00"), "EUR", false);
 
-        assertEquals(new BigDecimal("0.50"), fee);
-    }
 
-    @Test
-    @DisplayName("EUR: large amount is capped at the maximum fee of 20.00")
-    void eurLargeAmountIsCappedAtMaximumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "EUR", false);
-
-        assertEquals(new BigDecimal("20.00"), fee);
-    }
 
     @Test
     @DisplayName("Boundary: the maximum allowed amount 50,000.00 is accepted (BUG-1)")
@@ -80,29 +63,6 @@ class FeeCalculatorTest {
                 () -> calculator.calculateFee(new BigDecimal("50000.01"), "EUR", false));
     }
 
-    @Test
-    @DisplayName("USD: 1% of 1,000.00 is 10.00")
-    void usdFeeIsOnePercent() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "USD", false);
-
-        assertEquals(new BigDecimal("10.00"), fee);
-    }
-
-    @Test
-    @DisplayName("USD: small amount gets the minimum fee of 1.00")
-    void usdSmallAmountGetsMinimumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("50.00"), "USD", false);
-
-        assertEquals(new BigDecimal("1.00"), fee);
-    }
-
-    @Test
-    @DisplayName("USD: large amount is capped at the maximum fee of 50.00")
-    void usdLargeAmountIsCappedAtMaximumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "USD", false);
-
-        assertEquals(new BigDecimal("50.00"), fee);
-    }
 
     @Test
     @DisplayName("Instant: 1.00 is added to the EUR fee")
@@ -127,6 +87,32 @@ class FeeCalculatorTest {
 
         assertEquals(new BigDecimal("0.76"), fee);
     }
+
+
+    @ParameterizedTest(name = "EUR {0} -> fee {1}")
+    @CsvSource({
+            "10.00,    0.50",
+            "1000.00,  5.00",
+            "10000.00, 20.00"
+    })
+    void eurFeeTable(String amount, String expectedFee) {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal(amount), "EUR", false);
+
+        assertEquals(new BigDecimal(expectedFee), fee);
+    }
+
+    @ParameterizedTest(name = "USD {0} -> fee {1}")
+    @CsvSource({
+            "50.00,    1.00",
+            "1000.00,  10.00",
+            "10000.00, 50.00"
+    })
+    void usdFeeTable(String amount, String expectedFee) {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal(amount), "USD", false);
+
+        assertEquals(new BigDecimal(expectedFee), fee);
+    }
+
 
 
     // TODO Week 1: add your tests below.
