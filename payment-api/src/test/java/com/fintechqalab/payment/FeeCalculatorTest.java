@@ -103,6 +103,24 @@ class FeeCalculatorTest {
 
         assertEquals(new BigDecimal("50.00"), fee);
     }
+
+    @Test
+    @DisplayName("Instant: 1.00 is added to the EUR fee")
+    void instantPaymentAddsSurcharge() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "EUR", true);
+
+        assertEquals(new BigDecimal("6.00"), fee);
+    }
+
+    @Test
+    @DisplayName("Instant: 1.00 is added after the minimum fee is applied")
+    void instantSurchargeIsAddedAfterMinimumFee() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("10.00"), "EUR", true);
+
+        assertEquals(new BigDecimal("1.50"), fee);
+    }
+
+
     // TODO Week 1: add your tests below.
     // Ideas (equivalence partitioning and boundary value analysis):
     //   - EUR minimum fee (very small amounts) and maximum fee (very large amounts)
