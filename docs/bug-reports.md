@@ -57,3 +57,34 @@ This can cause customer complaints and regulatory risk.
 
 **Root cause (suspected)**
 This information was discovered whilst carrying out a test involving a payment of $1,0000.00;
+
+## BUG-3: Fee is rounded down instead of HALF_UP”
+
+
+| Field | Value                                          |
+| --- |------------------------------------------------|
+| Component | payment-api / FeeCalculator                    |
+| Severity | Major                                          |
+| Priority | High                                           |
+| Found by | Unit test `roundingAfterMinimumFee` |
+| Status | Open                                           |
+
+**Steps to reproduce**
+1. Call `calculateFee(151.00, "EUR", false)`.
+
+**Expected result**
+The fee should have been rounded to 0.76 from 0.755 instead of 0.75. Given that rules specifies that 
+fees falling exactly a whole number should be rounded to next whole number.
+
+**Actual result**
+The fee is 0.75. The rounding is not applied.
+Test output: '<0.76> but was <0.75>'
+
+**Impact**
+Every EUR payment's fee is not able to rounded to next whole number. 
+Bearing in mind that millions of transactions are carried out every day, this gap might be so much.
+This can cause customer complaints and regulatory risk.
+
+**Root cause (suspected)**
+The final rounding uses `RoundingMode.DOWN` instead of `RoundingMode.HALF_UP`:
+`return fee.setScale(2, RoundingMode.DOWN);`

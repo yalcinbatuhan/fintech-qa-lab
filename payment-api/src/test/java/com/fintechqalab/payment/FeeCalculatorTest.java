@@ -120,6 +120,14 @@ class FeeCalculatorTest {
         assertEquals(new BigDecimal("1.50"), fee);
     }
 
+    @Test
+    @DisplayName("Rounding: 0.755 is rounded HALF_UP to 0.76 (BUG-3)")
+    void roundingAfterMinimumFee() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("151.00"), "EUR", false);
+
+        assertEquals(new BigDecimal("0.76"), fee);
+    }
+
 
     // TODO Week 1: add your tests below.
     // Ideas (equivalence partitioning and boundary value analysis):
