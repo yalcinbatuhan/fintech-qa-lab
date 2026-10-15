@@ -4,6 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -127,6 +129,32 @@ class FeeCalculatorTest {
 
         assertEquals(new BigDecimal("0.76"), fee);
     }
+
+
+    @ParameterizedTest(name = "EUR {0} -> fee {1}")
+    @CsvSource({
+            "10.00,    0.50",
+            "1000.00,  5.00",
+            "10000.00, 20.00"
+    })
+    void eurFeeTable(String amount, String expectedFee) {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal(amount), "EUR", false);
+
+        assertEquals(new BigDecimal(expectedFee), fee);
+    }
+
+    @ParameterizedTest(name = "USD {0} -> fee {1}")
+    @CsvSource({
+            "50.00,    1.00",
+            "1000.00,  10.00",
+            "10000.00, 50.00"
+    })
+    void usdFeeTable(String amount, String expectedFee) {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal(amount), "USD", false);
+
+        assertEquals(new BigDecimal(expectedFee), fee);
+    }
+
 
 
     // TODO Week 1: add your tests below.
