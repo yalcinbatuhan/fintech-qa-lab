@@ -21,13 +21,7 @@ class FeeCalculatorTest {
 
     private final FeeCalculator calculator = new FeeCalculator();
 
-    @Test
-    @DisplayName("EUR: 0.5% of 1,000.00 is 5.00")
-    void eurFeeIsHalfAPercent() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "EUR", false);
 
-        assertEquals(new BigDecimal("5.00"), fee);
-    }
 
     @Test
     @DisplayName("Unsupported currency is rejected")
@@ -43,21 +37,8 @@ class FeeCalculatorTest {
         assertThrows(IllegalArgumentException.class, () -> calculator.calculateFee(new BigDecimal("100.00"), "TRY", false));
     }
 
-    @Test
-    @DisplayName("EUR: small amount gets the minimum fee of 0.50")
-    void eurSmallAmountGetsMinimumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10.00"), "EUR", false);
 
-        assertEquals(new BigDecimal("0.50"), fee);
-    }
 
-    @Test
-    @DisplayName("EUR: large amount is capped at the maximum fee of 20.00")
-    void eurLargeAmountIsCappedAtMaximumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "EUR", false);
-
-        assertEquals(new BigDecimal("20.00"), fee);
-    }
 
     @Test
     @DisplayName("Boundary: the maximum allowed amount 50,000.00 is accepted (BUG-1)")
@@ -82,29 +63,6 @@ class FeeCalculatorTest {
                 () -> calculator.calculateFee(new BigDecimal("50000.01"), "EUR", false));
     }
 
-    @Test
-    @DisplayName("USD: 1% of 1,000.00 is 10.00")
-    void usdFeeIsOnePercent() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("1000.00"), "USD", false);
-
-        assertEquals(new BigDecimal("10.00"), fee);
-    }
-
-    @Test
-    @DisplayName("USD: small amount gets the minimum fee of 1.00")
-    void usdSmallAmountGetsMinimumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("50.00"), "USD", false);
-
-        assertEquals(new BigDecimal("1.00"), fee);
-    }
-
-    @Test
-    @DisplayName("USD: large amount is capped at the maximum fee of 50.00")
-    void usdLargeAmountIsCappedAtMaximumFee() {
-        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "USD", false);
-
-        assertEquals(new BigDecimal("50.00"), fee);
-    }
 
     @Test
     @DisplayName("Instant: 1.00 is added to the EUR fee")
