@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Payment API used as the system under test. Uses only the JDK (no frameworks).
  *
  * <pre>
+ * GET  /                     -> payment web UI (used by the Playwright UI tests)
  * GET  /health                -> 200 {"status":"UP"}
  * POST /api/auth/token        -> 200 {"token":"..."}       body: {"username":"demo","password":"demo123"}
  * POST /api/payments          -> 201 payment (auth)        body: {"amount":100.00,"currency":"EUR","iban":"IE29AIBK93115212345678","instant":false}
@@ -57,12 +59,36 @@ public class PaymentApiApplication {
         server.createContext("/health", exchange -> handle(exchange, this::health));
         server.createContext("/api/auth/token", exchange -> handle(exchange, this::token));
         server.createContext("/api/payments", exchange -> handle(exchange, this::payments));
+        server.createContext("/", this::serveUi);
         server.start();
     }
 
     public void stop() {
         if (server != null) {
             server.stop(0);
+        }
+    }
+
+    // ---- web UI ------------------------------------------------------------------------------
+
+    private void serveUi(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        if (!path.equals("/") && !path.equals("/index.html")) {
+            handle(exchange, e -> Response.error(404, "Not found"));
+            return;
+        }
+        byte[] bytes;
+        try (InputStream in = PaymentApiApplication.class.getResourceAsStream("/web/index.html")) {
+            if (in == null) {
+                handle(exchange, e -> Response.error(500, "Web UI not found"));
+                return;
+            }
+            bytes = in.readAllBytes();
+        }
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream out = exchange.getResponseBody()) {
+            out.write(bytes);
         }
     }
 

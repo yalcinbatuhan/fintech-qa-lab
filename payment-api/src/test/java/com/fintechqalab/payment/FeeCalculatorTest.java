@@ -1,6 +1,7 @@
 package com.fintechqalab.payment;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -41,6 +42,7 @@ class FeeCalculatorTest {
 
 
     @Test
+    @Tag("known-bug")
     @DisplayName("Boundary: the maximum allowed amount 50,000.00 is accepted (BUG-1)")
     void maximumAllowedAmountIsAccepted() {
         BigDecimal fee = calculator.calculateFee(new BigDecimal("50000.00"), "EUR", false);
@@ -81,6 +83,7 @@ class FeeCalculatorTest {
     }
 
     @Test
+    @Tag("known-bug")
     @DisplayName("Rounding: 0.755 is rounded HALF_UP to 0.76 (BUG-3)")
     void roundingAfterMinimumFee() {
         BigDecimal fee = calculator.calculateFee(new BigDecimal("151.00"), "EUR", false);
@@ -104,13 +107,22 @@ class FeeCalculatorTest {
     @ParameterizedTest(name = "USD {0} -> fee {1}")
     @CsvSource({
             "50.00,    1.00",
-            "1000.00,  10.00",
-            "10000.00, 50.00"
+            "1000.00,  10.00"
     })
     void usdFeeTable(String amount, String expectedFee) {
         BigDecimal fee = calculator.calculateFee(new BigDecimal(amount), "USD", false);
 
         assertEquals(new BigDecimal(expectedFee), fee);
+    }
+
+    // Moved out of usdFeeTable so it can be tagged on its own: this row exposes BUG-2.
+    @Test
+    @Tag("known-bug")
+    @DisplayName("USD fee is capped at 50.00 (BUG-2)")
+    void usdFeeIsCappedAtMaximum() {
+        BigDecimal fee = calculator.calculateFee(new BigDecimal("10000.00"), "USD", false);
+
+        assertEquals(new BigDecimal("50.00"), fee);
     }
 
 

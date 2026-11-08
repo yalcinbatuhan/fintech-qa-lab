@@ -23,6 +23,12 @@
         <junit.version>5.11.4</junit.version>
         <rest-assured.version>5.5.0</rest-assured.version>
         <jackson.version>2.18.2</jackson.version>
+        <playwright.version>1.49.0</playwright.version>
+
+        <!-- Tests tagged "known-bug" expose open defects on purpose; they are excluded from the
+             default build and run in their own CI job. Run them locally with:
+             mvn test -Dgroups=known-bug -DexcludedGroups= -->
+        <excludedGroups>known-bug</excludedGroups>
 
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
@@ -46,6 +52,11 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.playwright</groupId>
+                <artifactId>playwright</artifactId>
+                <version>${playwright.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

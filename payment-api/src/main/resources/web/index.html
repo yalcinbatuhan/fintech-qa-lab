@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fintech QA Lab – Payments</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f6f8; color: #1d2733; margin: 0; }
+    main { max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 1.5rem; }
+    section { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    label { display: block; margin: 12px 0 4px; font-weight: 600; }
+    input[type=text], input[type=password], input[type=number], select { width: 100%; padding: 8px; box-sizing: border-box; }
+    .inline { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+    button { margin-top: 16px; padding: 10px 18px; background: #0b5cad; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    .error { color: #b00020; margin-top: 12px; }
+    .result { background: #e8f5e9; padding: 12px; border-radius: 4px; margin-top: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 6px; border-bottom: 1px solid #ddd; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Fintech QA Lab – Payments</h1>
+
+  <section id="login-section" data-testid="login-form">
+    <h2>Sign in</h2>
+    <label for="username">Username</label>
+    <input id="username" type="text" data-testid="username" autocomplete="username">
+    <label for="password">Password</label>
+    <input id="password" type="password" data-testid="password" autocomplete="current-password">
+    <button id="login-button" data-testid="login-button">Sign in</button>
+    <p id="login-error" class="error" data-testid="login-error" hidden></p>
+  </section>
+
+  <section id="payment-section" data-testid="payment-form" hidden>
+    <h2>New payment</h2>
+    <label for="amount">Amount</label>
+    <input id="amount" type="number" step="0.01" data-testid="amount">
+    <label for="currency">Currency</label>
+    <select id="currency" data-testid="currency">
+      <option value="EUR">EUR</option>
+      <option value="USD">USD</option>
+      <option value="GBP">GBP</option>
+    </select>
+    <label for="iban">IBAN</label>
+    <input id="iban" type="text" data-testid="iban" placeholder="IE29AIBK93115212345678">
+    <div class="inline">
+      <input id="instant" type="checkbox" data-testid="instant">
+      <label for="instant" style="margin:0">Instant payment (+1.00 fee)</label>
+    </div>
+    <button id="pay-button" data-testid="pay-button">Send payment</button>
+    <p id="payment-error" class="error" data-testid="payment-error" hidden></p>
+    <div id="payment-result" class="result" data-testid="payment-result" hidden>
+      Payment <strong data-testid="result-id"></strong> created.
+      Fee: <strong data-testid="result-fee"></strong>
+      Status: <strong data-testid="result-status"></strong>
+    </div>
+  </section>
+
+  <section id="list-section" data-testid="payments-list" hidden>
+    <h2>Payments</h2>
+    <table>
+      <thead><tr><th>ID</th><th>Amount</th><th>Currency</th><th>Fee</th><th>Status</th></tr></thead>
+      <tbody data-testid="payments-table-body"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  let token = null;
+  const $ = (id) => document.getElementById(id);
+
+  function show(el, text) { if (text !== undefined) el.textContent = text; el.hidden = false; }
+  function hide(el) { el.hidden = true; }
+  function money(value) { return Number(value).toFixed(2); }
+
+  async function api(method, path, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const response = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    const data = await response.json();
+    return { ok: response.ok, data };
+  }
+
+  $('login-button').addEventListener('click', async () => {
+    hide($('login-error'));
+    const { ok, data } = await api('POST', '/api/auth/token',
+      { username: $('username').value, password: $('password').value });
+    if (!ok) { show($('login-error'), data.error); return; }
+    token = data.token;
+    hide($('login-section'));
+    show($('payment-section'));
+    show($('list-section'));
+    await refreshList();
+  });
+
+  $('pay-button').addEventListener('click', async () => {
+    hide($('payment-error'));
+    hide($('payment-result'));
+    const raw = $('amount').value;
+    const { ok, data } = await api('POST', '/api/payments', {
+      amount: raw === '' ? null : Number(raw),
+      currency: $('currency').value,
+      iban: $('iban').value,
+      instant: $('instant').checked
+    });
+    if (!ok) { show($('payment-error'), data.error); return; }
+    document.querySelector('[data-testid=result-id]').textContent = '#' + data.id;
+    document.querySelector('[data-testid=result-fee]').textContent = money(data.fee) + ' ' + data.currency;
+    document.querySelector('[data-testid=result-status]').textContent = data.status;
+    show($('payment-result'));
+    await refreshList();
+  });
+
+  async function refreshList() {
+    const { ok, data } = await api('GET', '/api/payments');
+    if (!ok) return;
+    const body = document.querySelector('[data-testid=payments-table-body]');
+    body.innerHTML = '';
+    data.forEach((p) => {
+      const row = document.createElement('tr');
+      row.setAttribute('data-testid', 'payment-row');
+      [p.id, money(p.amount), p.currency, money(p.fee), p.status].forEach((value) => {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      body.appendChild(row);
+    });
+  }
+</script>
+</body>
+</html>
