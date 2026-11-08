@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  tests:
+    name: Unit, API and UI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Playwright for Java downloads Chromium itself; this step only adds the Linux libraries it needs.
+      - name: Install Playwright system dependencies
+        run: npx -y playwright@1.49.0 install-deps chromium
+
+      - name: Run tests
+        run: mvn -B verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/target/surefire-reports/'
+
+  known-bugs:
+    name: Known bugs (expected to fail until fixed)
+    runs-on: ubuntu-latest
+    # These tests expose open defects on purpose (docs/bug-reports.md), so this job may fail
+    # without blocking the pipeline. It turns green once the bugs are fixed.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run known-bug tests
+        run: mvn -B -pl payment-api test -Dgroups=known-bug -DexcludedGroups=

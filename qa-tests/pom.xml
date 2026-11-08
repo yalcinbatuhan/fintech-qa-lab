@@ -29,5 +29,17 @@
             <artifactId>jackson-databind</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- The UI tests start the payment API in-process on a free port, so no manual start is needed. -->
+        <dependency>
+            <groupId>com.fintechqalab</groupId>
+            <artifactId>payment-api</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
