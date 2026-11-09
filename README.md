@@ -23,7 +23,7 @@ Requirements: Java 21 and Maven (IntelliJ IDEA includes Maven).
 2. Run all tests: `mvn test` from the project root, or right-click a test class in IntelliJ and choose **Run**.
    The UI tests start the API themselves on a free port.
 3. Watch the UI tests in a real browser: `mvn test -pl qa-tests -am -Dheadless=false`.
-4. Run the tests that expose open bugs: `mvn test -pl payment-api -Dgroups=known-bug -DexcludedGroups=`.
+4. Run the tests that expose open bugs: `mvn test -fae -Dgroups=known-bug -DexcludedGroups=`.
 
 Tests tagged `known-bug` fail on purpose until the defects in [docs/bug-reports.md](docs/bug-reports.md)
 are fixed. CI runs them in a separate, non-blocking job so the main pipeline stays green.
