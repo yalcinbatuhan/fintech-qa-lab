@@ -48,4 +48,4 @@ jobs:
           cache: maven
 
       - name: Run known-bug tests
-        run: mvn -B -pl payment-api test -Dgroups=known-bug -DexcludedGroups=
+        run: mvn -B -fae test -Dgroups=known-bug -DexcludedGroups=

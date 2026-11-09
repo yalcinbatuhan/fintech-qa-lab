@@ -88,3 +88,61 @@ This can cause customer complaints and regulatory risk.
 **Root cause (suspected)**
 The final rounding uses `RoundingMode.DOWN` instead of `RoundingMode.HALF_UP`:
 `return fee.setScale(2, RoundingMode.DOWN);`
+
+
+## BUG-4: Payment list is returned without authentication
+
+| Field | Value |
+| --- | --- |
+| Component | payment-api / GET /api/payments |
+| Severity | Critical |
+| Priority | High |
+| Found by | API security test `listPaymentsWithoutTokenIsRejected` |
+| Status | Open |
+
+**Steps to reproduce**
+1. Send `GET /api/payments` without an `Authorization` header.
+
+**Expected result**
+401 `{"error":"Missing or invalid token"}`, because every /api/payments endpoint requires a valid bearer token.
+
+**Actual result**
+200 with the full list of payments, including every customer's IBAN, amount and fee.
+Test output: `Expected status code <401> but was <200>`
+
+**Impact**
+Any unauthenticated user can read all customers' payment data and IBANs.
+This is a data exposure issue (OWASP API Security: broken authentication) with GDPR and regulatory risk.
+
+**Root cause (suspected)**
+POST /api/payments checks the token, but the GET branch of the same endpoint skips the authorisation check.
+
+
+## BUG-5: Non-numeric payment id causes a 500 server error
+
+| Field | Value |
+| --- | --- |
+| Component | payment-api / GET /api/payments/{id} |
+| Severity | Minor |
+| Priority | Medium |
+| Found by | API security test `nonNumericPaymentIdIsRejected` |
+| Status | Open |
+
+**Steps to reproduce**
+1. Get a valid token from `POST /api/auth/token`.
+2. Send `GET /api/payments/abc` with the `Authorization: Bearer <token>` header.
+
+**Expected result**
+400 with an error message, because invalid input must never cause a server error.
+
+**Actual result**
+500 `{"error":"Internal server error"}`.
+Test output: `Expected status code <400> but was <500>`
+
+**Impact**
+Simple invalid input triggers a server error. This creates false alerts in monitoring
+and tells an attacker that the input is not validated properly (OWASP: improper error handling).
+
+**Root cause (suspected)**
+`parseId` throws `IllegalStateException` for non-numeric ids, but the error handler only maps
+`IllegalArgumentException` to 400, so every other exception becomes a 500.
