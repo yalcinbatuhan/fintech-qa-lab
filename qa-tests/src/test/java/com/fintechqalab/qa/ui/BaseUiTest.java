@@ -6,13 +6,19 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Tracing;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
@@ -24,6 +30,10 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
  * After: closes everything again.
  *
  * Run with a visible browser: mvn test -pl qa-tests -am -Dheadless=false
+ *
+ * Tracing: every test records a Playwright trace (screenshots, DOM snapshots, network, console).
+ * The trace is saved only when the test fails, to qa-tests/target/playwright-traces/.
+ * Open it by dragging the .zip file onto https://trace.playwright.dev
  */
 public abstract class BaseUiTest {
 
@@ -35,6 +45,13 @@ public abstract class BaseUiTest {
 
     protected BrowserContext context;
     protected Page page;
+
+    private boolean testFailed;
+
+    /** Runs right after each test (before @AfterEach) and remembers whether the test failed. */
+    @RegisterExtension
+    final AfterTestExecutionCallback failureWatcher =
+            extensionContext -> testFailed = extensionContext.getExecutionException().isPresent();
 
     @BeforeAll
     static void startAppAndBrowser() throws IOException {
@@ -64,15 +81,28 @@ public abstract class BaseUiTest {
     @BeforeEach
     void openPaymentPage() {
         context = browser.newContext();
+        context.tracing().start(new Tracing.StartOptions()
+                .setScreenshots(true)
+                .setSnapshots(true)
+                .setSources(true));
         page = context.newPage();
         page.navigate(baseUrl + "/");
     }
 
     @AfterEach
-    void closePage() {
-        if (context != null) {
-            context.close();
+    void closePage(TestInfo testInfo) {
+        if (context == null) {
+            return;
         }
+        if (testFailed) {
+            Path trace = Paths.get("target", "playwright-traces",
+                    getClass().getSimpleName() + "-" + testInfo.getTestMethod().map(m -> m.getName()).orElse("test") + ".zip");
+            context.tracing().stop(new Tracing.StopOptions().setPath(trace));
+            System.out.println("Playwright trace saved: " + trace.toAbsolutePath());
+        } else {
+            context.tracing().stop();
+        }
+        context.close();
     }
 
     /** Signs in with the demo user and waits until the payment form is visible. */

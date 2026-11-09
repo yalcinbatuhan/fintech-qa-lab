@@ -63,3 +63,34 @@ Sonra GitHub'da **Pull request** aç. CI otomatik çalışır; PR sayfasında ik
 - **Known bugs** → kırmızı olması normal
 
 Ana job yeşilse PR'ı merge et. Kendi testlerini yazdıkça aynı şekilde yeni commit'ler ekle.
+
+## 6. Trace analizi ve flaky testler
+
+### Trace nedir?
+
+Her Playwright testi çalışırken bir **trace** (iz kaydı) tutulur: her adımın ekran görüntüsü,
+sayfanın o anki hali (DOM), ağ istekleri ve konsol mesajları. Test **kırmızı olursa** kayıt
+`qa-tests/target/playwright-traces/<SınıfAdı>-<testAdı>.zip` dosyasına yazılır. Yeşil testlerin
+kaydı tutulmaz, böylece disk dolmaz.
+
+**Trace'i açmak:** https://trace.playwright.dev adresine git ve `.zip` dosyasını sayfaya sürükle.
+Soldaki adım listesinde her komuta tıklayarak o anda ekranda ne olduğunu görebilirsin.
+
+### Flaky test nedir?
+
+Kod değişmediği halde **bazen geçip bazen kalan** test. Genelde zamanlama sorunlarından kaynaklanır
+(ör. sayfa yüklenmeden tıklamak). CI'da kırmızı olan bir test 2 kez daha denenir:
+
+- Tekrar denemede de kalırsa → gerçek hata, job kırmızı olur.
+- Tekrar denemede geçerse → job yeşil kalır ama raporda **"Flakes: 1"** yazar ve trace kaydedilir.
+
+Flaky testi görmezden gelmek yerine trace'ini açıp kök nedenini bulmak gerekir.
+
+### CI'da trace'e ulaşmak
+
+GitHub'da **Actions** sekmesi → ilgili çalışma → sayfanın altındaki **Artifacts** bölümü →
+**playwright-traces** dosyasını indir, içindeki `.zip`'i trace.playwright.dev'e sürükle.
+
+Mülakat cümlesi: "I record Playwright traces for every UI test and keep them only on failure.
+CI retries failing tests and reports flaky ones separately, and uploads their traces so I can
+find the root cause instead of just re-running the pipeline."

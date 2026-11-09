@@ -22,8 +22,10 @@ jobs:
       - name: Install Playwright system dependencies
         run: npx -y playwright@1.49.0 install-deps chromium
 
+      # A failing test is retried up to 2 times. If it passes on a retry, Surefire reports it
+      # as a "Flake" instead of hiding it, so unreliable tests stay visible.
       - name: Run tests
-        run: mvn -B verify
+        run: mvn -B verify -Dsurefire.rerunFailingTestsCount=2
 
       - name: Upload test reports
         if: always()
@@ -31,6 +33,15 @@ jobs:
         with:
           name: test-reports
           path: '**/target/surefire-reports/'
+
+      # Uploaded whenever a UI test failed at least once, including flaky tests that passed on retry.
+      - name: Upload Playwright traces of failed tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: '**/target/playwright-traces/'
+          if-no-files-found: ignore
 
   known-bugs:
     name: Known bugs (expected to fail until fixed)
